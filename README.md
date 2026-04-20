@@ -21,14 +21,6 @@ This folder contains the files needed to share the current state of the CPE 595 
 - `requirements.txt`
   Python packages needed for the app and pipeline.
 
-## What Is Not Included
-
-- The original repo `.venv`
-- The legacy Lua/Torch training code from the upstream TrashNet repo
-- Git metadata
-
-This share bundle is focused on the current Python-based project path.
-
 ## Project Summary
 
 The current project uses the TrashNet dataset to classify six classes of waste:
@@ -103,7 +95,7 @@ This will:
 - train multiple classical ML models
 - save updated artifacts into `output/`
 
-## Notes For Teammates
+## Notes
 
 - The current web app is a sample-image demo, not a user-upload app yet.
 - The saved model and scaler are already included, so the app can run without retraining.
