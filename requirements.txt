@@ -1,0 +1,9 @@
+Flask
+joblib
+matplotlib
+numpy
+opencv-python-headless
+scikit-image
+scikit-learn
+scipy
+seaborn
