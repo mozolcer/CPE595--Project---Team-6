@@ -1,79 +1,34 @@
-# SortSmart Share Bundle
+# SortSmart Recycling Classifier
 
-This folder contains the files needed to share the current state of the CPE 595 Applied AI project with teammates.
+SortSmart is a CPE 595 Applied AI project that classifies waste images into six TrashNet classes: `cardboard`, `glass`, `metal`, `paper`, `plastic`, and `trash`.
 
-## What Is Included
+This repo contains the final web app, deep-learning training code, inference utilities, and presentation-ready result artifacts.
 
-- `app.py`
-  Flask demo app for running the trained classifier.
-- `sortsmart_pipeline.py`
-  Training and evaluation pipeline for the current midterm model.
-- `train_deep_models.py`
-  PyTorch/timm training runner for modern pretrained vision models.
-- `deep_vision.py`
-  Shared model, transform, and checkpoint inference utilities.
-- `deep_inference.py`
-  CLI helper for testing a saved deep-learning checkpoint on one image.
-- `output/`
-  Saved model artifacts, evaluation plots, and the results summary.
-- `templates/`
-  HTML template used by the Flask app.
-- `static/samples/`
-  Sample images used by the demo UI.
-- `trashnet-master/data/dataset-resized/`
-  TrashNet resized dataset used by the pipeline.
-- `CPE 595 Midterm-Team6.pdf`
-  Midterm report slides.
-- `requirements.txt`
-  Python packages needed for the classical app and pipeline.
-- `requirements-deep.txt`
-  Extra packages for the PyTorch/timm deep-learning track.
+## Final Model
 
-## What Is Not Included
+The web app uses one final checkpoint:
 
-- The original repo `.venv`
-- The legacy Lua/Torch training code from the upstream TrashNet repo
-- Git metadata
+| Model | Val Macro-F1 | Test Macro-F1 | Test Accuracy | Median Latency |
+|---|---:|---:|---:|---:|
+| `vit_base_patch16_224` | `0.9049` | `0.9219` | `0.9263` | `5.23 ms` |
 
-This share bundle is focused on the current Python-based project path.
+The checkpoint should be placed at:
 
-## Project Summary
+```text
+output/deep/best_model.pt
+```
 
-SortSmart classifies TrashNet waste images into six classes:
+## Key Files
 
-- `cardboard`
-- `glass`
-- `metal`
-- `paper`
-- `plastic`
-- `trash`
-
-The project now has three model families:
-
-- Classical ML baseline with HOG + HSV features.
-- A custom CNN trained from scratch.
-- Pretrained deep vision models using PyTorch/timm.
-
-The final website uses only the validation-selected best deep checkpoint:
-
-- Model: `vit_base_patch16_224`
-- Checkpoint: `output/deep/best_model.pt`
-- Validation Macro-F1: `0.9049`
-- Test Accuracy: `0.9263`
-- Test Macro-F1: `0.9219`
-- Median inference latency: `5.23 ms`
-
-The strongest test-only result was `swin_tiny_patch4_window7_224` with Test Macro-F1 `0.9475`, but it was not selected as the published model because final model selection should be based on validation performance, not test-set performance.
-
-Saved midterm classical baseline results in `output/results_summary.txt`:
-
-- Test Accuracy: `0.7895`
-- Test Macro-F1: `0.7833`
-- Median inference latency: `7.48 ms`
+- `app.py`: Flask app using the final deep checkpoint.
+- `templates/index.html`: Upload-capable web UI with confidence scores.
+- `train_deep_models.py`: Deep model training and ablation runner.
+- `deep_vision.py`: Model loading and inference utilities.
+- `deep_inference.py`: Command-line inference helper.
+- `make_presentable_results.py`: Generates combined result tables and figures.
+- `output/deep/presentable/`: Final tables, curves, plots, and metrics.
 
 ## Setup
-
-For the final deep-learning website and training tools, create and activate a virtual environment, then install dependencies:
 
 ```bash
 python3 -m venv .venv
@@ -83,19 +38,11 @@ pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorc
 pip install -r requirements-deep.txt
 ```
 
-On Windows PowerShell:
+For CPU-only machines, install the CPU PyTorch wheel from the official PyTorch selector instead of the CUDA wheel.
 
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
-pip install -r requirements-deep.txt
-```
+## Run The Web App
 
-## Run The Demo App
-
-From inside this `share` folder:
+With CUDA:
 
 ```bash
 SORTSMART_DEEP_CHECKPOINT=output/deep/best_model.pt \
@@ -103,13 +50,7 @@ SORTSMART_DEEP_DEVICE=cuda \
 python app.py
 ```
 
-Then open:
-
-```text
-http://127.0.0.1:5000
-```
-
-Use CPU if CUDA is unavailable:
+With CPU:
 
 ```bash
 SORTSMART_DEEP_CHECKPOINT=output/deep/best_model.pt \
@@ -117,139 +58,68 @@ SORTSMART_DEEP_DEVICE=cpu \
 python app.py
 ```
 
-The app supports both sample images from `static/samples/` and user image uploads. It displays the predicted class, the top predictions, and the confidence score for every class.
-
-## Retrain The Model
-
-From inside this `share` folder:
-
-```bash
-python sortsmart_pipeline.py
-```
-
-This will:
-
-- load `trashnet-master/data/dataset-resized/`
-- split the dataset into train/validation/test
-- augment the training split only
-- train multiple classical ML models
-- save updated artifacts into `output/`
-
-## Deep Vision Training Track
-
-The deep-learning track keeps the midterm HOG + HSV pipeline intact and adds transfer learning with:
-
-- `efficientnetv2_s`
-- `convnext_tiny`
-- `swin_tiny_patch4_window7_224`
-- `vit_base_patch16_224`
-- `custom_cnn_scratch`
-
-The runner creates the same deterministic 70/15/15 split, trains multiple ablations, evaluates on validation and test sets, and writes artifacts under `output/deep/`:
-
-- `leaderboard.csv`
-- `deep_results_summary.txt`
-- `best_model.pt`
-- `split_seed42.json`
-- `runs/<model>/<experiment>/checkpoint_best.pt`
-- `runs/<model>/<experiment>/history.csv`
-- `runs/<model>/<experiment>/metrics.json`
-- `runs/<model>/<experiment>/confusion_matrix.png`
-- `runs/<model>/<experiment>/per_class_f1.png`
-
-Current deep-learning results are in:
-
-- `output/deep/pretrained_core_3ep/`
-- `output/deep/pretrained_core_lr1e4_5ep/`
-- `output/deep/latest_results_summary.txt`
-- `output/deep/latest_leaderboard.csv`
-
-The current published deep checkpoint is `output/deep/best_model.pt`, copied from:
+Open:
 
 ```text
-output/deep/pretrained_core_lr1e4_5ep/runs/vit_base_patch16_224/full_finetune/checkpoint_best.pt
+http://127.0.0.1:5000
 ```
 
-The combined presentation artifacts that include classical ML, custom CNN, and pretrained deep models are:
+The app supports sample images and user uploads. Uploaded images are classified in memory and are not saved to disk.
 
-- `output/deep/presentable/combined_all_model_results.csv`
-- `output/deep/presentable/combined_all_model_results.md`
-- `output/deep/presentable/combined_validation_macro_f1_all_models.png`
-- `output/deep/presentable/combined_test_macro_f1_available_models.png`
-- `output/deep/presentable/combined_best_by_family_test_macro_f1.png`
-- `output/deep/presentable/combined_neural_training_curves.png`
+## Training
 
-Recommended workflow:
-
-1. Install dependencies.
+Run the pretrained model comparison:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
-pip install -r requirements-deep.txt
+python train_deep_models.py \
+  --ablation-plan core \
+  --models efficientnetv2_s convnext_tiny swin_tiny_patch4_window7_224 vit_base_patch16_224 \
+  --epochs 5 \
+  --head-epochs 1 \
+  --learning-rates 1e-4 \
+  --batch-size 16
 ```
 
-For this machine, `nvidia-smi` reports an RTX 4080 Laptop GPU with a CUDA 12.5 driver. The CUDA 12.4 PyTorch wheel is the safest target for that driver. If using a different machine, use the CUDA wheel recommended by the PyTorch install selector.
-
-If C: drive space is tight in WSL, create the venv outside the mounted project folder:
+Run the custom CNN from-scratch ablation:
 
 ```bash
-python3 -m venv /tmp/sortsmart-venv
-source /tmp/sortsmart-venv/bin/activate
-pip install --no-cache-dir -r requirements.txt
-pip install --no-cache-dir torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
-pip install --no-cache-dir -r requirements-deep.txt
-```
-
-2. Run a dependency and data smoke test.
-
-```bash
-python3 train_deep_models.py \
-  --ablation-plan smoke \
-  --models convnext_tiny \
-  --limit-per-class 12 \
-  --batch-size 4 \
-  --num-workers 0 \
-  --latency-repeats 5 \
+python train_deep_models.py \
+  --ablation-plan scratch_light \
+  --models custom_cnn_scratch \
+  --epochs 70 \
+  --learning-rates 1e-3 \
+  --batch-size 32 \
+  --label-smoothing 0.05 \
   --no-pretrained
 ```
 
-3. Run the first real comparison.
+After training runs are available locally, regenerate presentation artifacts:
 
 ```bash
-python3 train_deep_models.py \
-  --ablation-plan core \
-  --epochs 12 \
-  --head-epochs 3 \
-  --batch-size 16
+python make_presentable_results.py
 ```
 
-4. Run the full ablation set once the core run is stable.
+Run inference on one image:
 
 ```bash
-python3 train_deep_models.py \
-  --ablation-plan full \
-  --epochs 16 \
-  --head-epochs 3 \
-  --learning-rates 3e-4 1e-4 \
-  --batch-size 16
-```
-
-The full plan trains head-only, full fine-tuning, stronger augmentation, weighted sampling, and no-class-weight variants for each model. Pretrained weights are downloaded the first time each backbone is used.
-
-5. Test the selected checkpoint on an image.
-
-```bash
-python3 deep_inference.py \
+python deep_inference.py \
   --checkpoint output/deep/best_model.pt \
   --image static/samples/glass.jpg
 ```
 
-## Notes For Teammates
+## Results
 
-- The website intentionally uses only the best deep checkpoint, not the classical baseline.
-- The saved classical model remains in `output/` for comparison and reporting.
-- Uploaded images are written to `static/uploads/` during local demo sessions.
-- Test metrics are comparable across the neural models because they use the same deterministic dataset split and evaluation code. For the older classical models, only Gradient Boosting has saved test metrics; the other classical rows report validation scores from the midterm pipeline.
+Use these files for the report or slides:
+
+```text
+output/deep/latest_results_summary.txt
+output/deep/latest_leaderboard.csv
+output/deep/presentable/combined_all_model_results.md
+output/deep/presentable/combined_all_model_results.csv
+output/deep/presentable/combined_validation_macro_f1_all_models.png
+output/deep/presentable/combined_test_macro_f1_available_models.png
+output/deep/presentable/combined_neural_training_curves.png
+output/deep/presentable/best_confusion_matrix.png
+output/deep/presentable/best_per_class_f1.png
+output/deep/presentable/best_metrics.json
+```
