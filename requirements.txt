@@ -3,6 +3,7 @@ joblib
 matplotlib
 numpy
 opencv-python-headless
+Pillow
 scikit-image
 scikit-learn
 scipy

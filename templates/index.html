@@ -5,136 +5,767 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SortSmart</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f111a; color: #e2e8f0; }
-  .container { max-width: 860px; margin: 0 auto; padding: 32px 20px; }
+  :root {
+    --bg: #11150f;
+    --panel: rgba(247, 242, 229, 0.92);
+    --panel-dark: #1d2418;
+    --ink: #172014;
+    --muted: #65705d;
+    --line: rgba(23, 32, 20, 0.16);
+    --green: #1f7a4f;
+    --green-soft: #d9f2df;
+    --amber: #c7771f;
+    --red: #9b2d20;
+    --cream: #f7f2e5;
+  }
 
-  header { text-align: center; margin-bottom: 32px; }
-  header h1 { font-size: 1.8rem; color: #fff; }
-  header h1 span { color: #276ef1; }
-  header p { color: #64748b; font-size: .85rem; margin-top: 4px; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Aptos", "IBM Plex Sans", "Segoe UI", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 12% 12%, rgba(99, 145, 87, 0.45), transparent 28rem),
+      radial-gradient(circle at 86% 8%, rgba(235, 187, 88, 0.26), transparent 24rem),
+      linear-gradient(140deg, #11150f 0%, #263221 52%, #151914 100%);
+  }
 
-  /* Sample grid */
-  h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 12px; }
-  .samples { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 32px; }
+  .shell {
+    width: min(1180px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 34px 0 44px;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: flex-start;
+    color: var(--cream);
+    margin-bottom: 26px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .mark {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 18px;
+    background: #e4c86f;
+    color: #1b2114;
+    font-weight: 900;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(2rem, 5vw, 4.4rem);
+    line-height: 0.95;
+    letter-spacing: -0.08em;
+  }
+
+  .subtitle {
+    max-width: 450px;
+    margin: 7px 0 0;
+    color: rgba(247, 242, 229, 0.7);
+    font-size: 0.96rem;
+  }
+
+  .model-pill {
+    border: 1px solid rgba(247, 242, 229, 0.24);
+    background: rgba(247, 242, 229, 0.1);
+    color: var(--cream);
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 0.95fr 1.35fr;
+    gap: 22px;
+    align-items: start;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid rgba(255, 255, 255, 0.48);
+    border-radius: 30px;
+    box-shadow: 0 26px 80px rgba(0, 0, 0, 0.28);
+    overflow: hidden;
+  }
+
+  .card-body { padding: 22px; }
+  .section-title {
+    margin: 0 0 14px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .upload-zone {
+    display: grid;
+    gap: 14px;
+    place-items: center;
+    min-height: 240px;
+    border: 2px dashed rgba(31, 122, 79, 0.36);
+    border-radius: 24px;
+    padding: 26px;
+    text-align: center;
+    background:
+      linear-gradient(135deg, rgba(31, 122, 79, 0.12), rgba(228, 200, 111, 0.1)),
+      rgba(255, 255, 255, 0.42);
+  }
+
+  .upload-zone.dragging {
+    border-color: var(--green);
+    background: rgba(217, 242, 223, 0.8);
+  }
+
+  .upload-title {
+    margin: 0;
+    font-size: 1.55rem;
+    font-weight: 850;
+    letter-spacing: -0.04em;
+  }
+
+  .upload-copy {
+    margin: -6px 0 0;
+    color: var(--muted);
+    max-width: 310px;
+    font-size: 0.94rem;
+  }
+
+  .file-input { display: none; }
+
+  .button {
+    border: 0;
+    cursor: pointer;
+    border-radius: 999px;
+    padding: 12px 18px;
+    background: var(--ink);
+    color: var(--cream);
+    font: inherit;
+    font-weight: 800;
+    transition: transform 160ms ease, opacity 160ms ease;
+  }
+
+  .button:hover { transform: translateY(-1px); }
+  .button:disabled { cursor: wait; opacity: 0.64; transform: none; }
+
+  .button-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .file-status {
+    width: min(100%, 360px);
+    border: 1px solid rgba(23, 32, 20, 0.14);
+    border-radius: 16px;
+    padding: 11px 13px;
+    background: rgba(255, 255, 255, 0.54);
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
+  .file-status.ready {
+    color: #19482f;
+    background: rgba(217, 242, 223, 0.82);
+    border-color: rgba(31, 122, 79, 0.28);
+    font-weight: 800;
+  }
+
+  .file-status.busy {
+    color: #745012;
+    background: #fff1cc;
+    border-color: rgba(199, 119, 31, 0.3);
+    font-weight: 800;
+  }
+
+  .samples {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 18px;
+  }
+
   .sample {
-    cursor: pointer; border-radius: 10px; overflow: hidden;
-    border: 3px solid transparent; transition: border-color .15s, transform .15s;
     position: relative;
-  }
-  .sample:hover { transform: scale(1.04); }
-  .sample.selected { border-color: #276ef1; }
-  .sample img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-  .sample .label {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    background: rgba(0,0,0,.65); color: #fff; text-align: center;
-    font-size: .7rem; padding: 3px 0; text-transform: capitalize;
+    border: 0;
+    cursor: pointer;
+    overflow: hidden;
+    border-radius: 18px;
+    background: #111;
+    aspect-ratio: 1;
+    padding: 0;
   }
 
-  /* Result panel */
-  .result {
-    background: #1a1d2e; border-radius: 12px; padding: 28px;
-    display: none; animation: fadeIn .3s ease;
+  .sample img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 180ms ease, opacity 180ms ease;
   }
-  .result.show { display: block; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-  .result-top { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
-  .result-top img { width: 90px; height: 90px; object-fit: cover; border-radius: 8px; }
-  .pred-class { font-size: 1.6rem; font-weight: 700; text-transform: capitalize; }
-  .pred-conf { color: #8892a4; font-size: .9rem; }
+  .sample:hover img,
+  .sample.active img { transform: scale(1.05); opacity: 0.84; }
+
+  .sample span {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    padding: 6px 8px;
+    border-radius: 999px;
+    background: rgba(17, 21, 15, 0.78);
+    color: var(--cream);
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-transform: capitalize;
+  }
+
+  .result-card {
+    min-height: 642px;
+    background:
+      linear-gradient(180deg, rgba(247, 242, 229, 0.96), rgba(238, 231, 210, 0.94)),
+      var(--cream);
+  }
+
+  .empty-state {
+    min-height: 642px;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    text-align: center;
+    padding: 24px;
+  }
+
+  .empty-state strong {
+    display: block;
+    color: var(--ink);
+    font-size: 1.5rem;
+    letter-spacing: -0.04em;
+    margin-bottom: 6px;
+  }
+
+  .result { display: none; }
+  .result.show {
+    display: grid;
+    grid-template-columns: 0.82fr 1fr;
+    gap: 0;
+    animation: rise 220ms ease-out;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .preview {
+    min-height: 642px;
+    background: var(--panel-dark);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .preview img {
+    width: 100%;
+    flex: 1;
+    min-height: 420px;
+    object-fit: cover;
+    border-radius: 22px;
+    background: #111;
+  }
+
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    color: var(--cream);
+  }
+
+  .status-label {
+    color: rgba(247, 242, 229, 0.58);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .main-result { padding: 26px; }
+
+  .prediction-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .prediction {
+    margin: 0;
+    font-size: clamp(2.15rem, 6vw, 4.9rem);
+    line-height: 0.9;
+    letter-spacing: -0.08em;
+    text-transform: capitalize;
+  }
+
+  .confidence {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 1.02rem;
+    font-weight: 800;
+  }
+
   .badge {
-    display: inline-block; padding: 5px 14px; border-radius: 16px;
-    font-weight: 600; font-size: .8rem; margin-top: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 9px 13px;
+    font-weight: 850;
+    font-size: 0.8rem;
+    white-space: nowrap;
   }
-  .badge.recycle { background: #166534; color: #bbf7d0; }
-  .badge.trash { background: #7f1d1d; color: #fecaca; }
-  .tip { color: #94a3b8; font-size: .8rem; margin-top: 2px; }
 
-  .bars { margin-top: 4px; }
-  .bar-row { display: flex; align-items: center; margin-bottom: 6px; }
-  .bar-label { width: 75px; font-size: .8rem; text-transform: capitalize; color: #94a3b8; }
-  .bar-track { flex: 1; background: #252839; border-radius: 4px; height: 20px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 4px; transition: width .35s ease; display: flex; align-items: center; padding-left: 8px; font-size: .7rem; font-weight: 600; min-width: 32px; }
-  .bar-fill.top { background: #276ef1; color: #fff; }
-  .bar-fill.other { background: #374151; color: #94a3b8; }
+  .badge.recycle { background: var(--green-soft); color: #0e5733; }
+  .badge.trash { background: #f4d5cd; color: var(--red); }
+  .badge.warn { background: #f8e4b7; color: #7a4a08; }
 
-  .empty { text-align: center; color: #475569; padding: 40px; }
+  .tip {
+    margin: 17px 0 0;
+    padding: 15px;
+    border-radius: 18px;
+    background: rgba(31, 122, 79, 0.09);
+    color: #33402e;
+    line-height: 1.45;
+  }
+
+  .low-confidence {
+    display: none;
+    margin-top: 12px;
+    padding: 14px 15px;
+    border-radius: 18px;
+    background: #fff1cc;
+    color: #6e470c;
+    line-height: 1.45;
+  }
+
+  .low-confidence.show { display: block; }
+
+  .top-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 22px 0;
+  }
+
+  .top-item {
+    padding: 13px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.48);
+  }
+
+  .top-item .rank {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .top-item .name {
+    margin-top: 7px;
+    text-transform: capitalize;
+    font-size: 1.05rem;
+    font-weight: 850;
+  }
+
+  .top-item .score {
+    margin-top: 2px;
+    color: var(--green);
+    font-weight: 850;
+  }
+
+  .bars { display: grid; gap: 10px; }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 82px 1fr 58px;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .bar-label {
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 800;
+    text-transform: capitalize;
+  }
+
+  .bar-track {
+    height: 20px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(23, 32, 20, 0.11);
+  }
+
+  .bar-fill {
+    height: 100%;
+    min-width: 2px;
+    border-radius: inherit;
+    background: #8c967c;
+    transition: width 280ms ease;
+  }
+
+  .bar-fill.top { background: linear-gradient(90deg, var(--green), #d1a840); }
+  .bar-score {
+    text-align: right;
+    color: var(--ink);
+    font-size: 0.86rem;
+    font-weight: 850;
+  }
+
+  .error {
+    display: none;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: #ffe0da;
+    color: var(--red);
+    font-weight: 750;
+  }
+
+  .error.show { display: block; }
+
+  @media (max-width: 920px) {
+    header,
+    .grid,
+    .result.show { grid-template-columns: 1fr; display: grid; }
+    header { justify-content: stretch; }
+    .model-pill { width: fit-content; }
+    .preview,
+    .result-card,
+    .empty-state { min-height: auto; }
+    .preview img { min-height: 280px; max-height: 420px; }
+  }
+
+  @media (max-width: 560px) {
+    .shell { width: min(100% - 20px, 1180px); padding-top: 18px; }
+    .card-body,
+    .main-result { padding: 16px; }
+    .samples,
+    .top-list { grid-template-columns: 1fr 1fr; }
+    .prediction-head { display: grid; }
+    .bar-row { grid-template-columns: 70px 1fr 48px; }
+  }
 </style>
 </head>
 <body>
-<div class="container">
+<main class="shell">
   <header>
-    <h1>Sort<span>Smart</span></h1>
-    <p>Select a sample item to classify</p>
-  </header>
-
-  <h2>Choose an item</h2>
-  <div class="samples" id="samples">
-    {% for fname in samples %}
-    <div class="sample" data-file="{{ fname }}" onclick="classify(this)">
-      <img src="/static/samples/{{ fname }}" alt="{{ fname }}">
-      <div class="label">{{ fname.replace('.jpg','') }}</div>
-    </div>
-    {% endfor %}
-  </div>
-
-  <div class="empty" id="empty">Click an image above to see the prediction</div>
-
-  <div class="result" id="result">
-    <div class="result-top">
-      <img id="resImg" src="">
-      <div>
-        <div class="pred-class" id="predClass"></div>
-        <div class="pred-conf" id="predConf"></div>
-        <span class="badge" id="badge"></span>
-        <div class="tip" id="tip"></div>
+    <div>
+      <div class="brand">
+        <div class="mark">SS</div>
+        <div>
+          <h1>SortSmart</h1>
+          <p class="subtitle">Upload a waste item photo or use a sample image. The app runs the final selected deep model only.</p>
+        </div>
       </div>
     </div>
-    <div class="bars" id="bars"></div>
+    <div class="model-pill">Best checkpoint: ViT-B/16</div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <div class="card-body">
+        <h2 class="section-title">Upload</h2>
+        <form class="upload-zone" id="uploadForm">
+          <input class="file-input" id="fileInput" name="image" type="file" accept="image/png,image/jpeg,image/webp">
+          <div>
+            <p class="upload-title">Classify your item</p>
+            <p class="upload-copy">Choose a JPG, PNG, or WebP image under 32 MB. A centered single item works best.</p>
+          </div>
+          <div class="button-row">
+            <button class="button" type="button" id="chooseBtn">1. Choose image</button>
+            <button class="button" type="submit" id="uploadBtn" disabled>2. Upload and classify</button>
+          </div>
+          <div class="file-status" id="fileStatus">No image selected yet.</div>
+        </form>
+        <div class="error" id="error"></div>
+
+        <h2 class="section-title" style="margin-top: 24px;">Samples</h2>
+        <div class="samples" id="samples">
+          {% for fname in samples %}
+          <button class="sample" type="button" data-file="{{ fname }}" aria-label="Classify {{ fname.replace('.jpg','') }}">
+            <img src="/static/samples/{{ fname }}" alt="{{ fname }}">
+            <span>{{ fname.replace('.jpg','') }}</span>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="card result-card">
+      <div class="empty-state" id="emptyState">
+        <div>
+          <strong>No prediction yet</strong>
+          Upload an image or choose a sample to see the predicted class and all confidence scores.
+        </div>
+      </div>
+
+      <div class="result" id="result">
+        <aside class="preview">
+          <img id="previewImage" src="" alt="Classified item">
+          <div class="status-row">
+            <div>
+              <div class="status-label">Model</div>
+              <div id="modelName">vit_base_patch16_224</div>
+            </div>
+            <span class="badge" id="actionBadge"></span>
+          </div>
+        </aside>
+
+        <div class="main-result">
+          <div class="prediction-head">
+            <div>
+              <h2 class="prediction" id="prediction"></h2>
+              <div class="confidence" id="confidence"></div>
+            </div>
+            <span class="badge warn" id="confidenceBadge"></span>
+          </div>
+
+          <p class="tip" id="tip"></p>
+          <div class="low-confidence" id="lowConfidence"></div>
+
+          <h2 class="section-title" style="margin-top: 24px;">Top predictions</h2>
+          <div class="top-list" id="topList"></div>
+
+          <h2 class="section-title">All confidence scores</h2>
+          <div class="bars" id="bars"></div>
+        </div>
+      </div>
+    </section>
   </div>
-</div>
+</main>
 
 <script>
-async function classify(el) {
-  document.querySelectorAll('.sample').forEach(s => s.classList.remove('selected'));
-  el.classList.add('selected');
+const fileInput = document.getElementById('fileInput');
+const chooseBtn = document.getElementById('chooseBtn');
+const uploadBtn = document.getElementById('uploadBtn');
+const uploadForm = document.getElementById('uploadForm');
+const errorBox = document.getElementById('error');
+const samples = document.getElementById('samples');
+const fileStatus = document.getElementById('fileStatus');
+const maxUploadBytes = 32 * 1024 * 1024;
+const allowedExtensions = new Set(['jpg', 'jpeg', 'png', 'webp']);
+let selectedFile = null;
+let selectedPreviewUrl = '';
 
-  const file = el.dataset.file;
-  document.getElementById('empty').style.display = 'none';
-  document.getElementById('result').classList.remove('show');
+function pct(value) {
+  return `${(value * 100).toFixed(1)}%`;
+}
 
-  const res = await fetch('/predict', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({filename: file})
+function formatBytes(bytes) {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function setLoading(isLoading) {
+  uploadBtn.disabled = isLoading || !selectedFile;
+  chooseBtn.disabled = isLoading;
+  document.querySelectorAll('.sample').forEach(button => button.disabled = isLoading);
+  if (isLoading) {
+    fileStatus.textContent = 'Uploading image and running the model...';
+    fileStatus.className = 'file-status busy';
+  } else if (selectedFile) {
+    fileStatus.textContent = `Selected: ${selectedFile.name} (${formatBytes(selectedFile.size)}). Ready to upload.`;
+    fileStatus.className = 'file-status ready';
+  }
+}
+
+function showError(message) {
+  errorBox.textContent = message;
+  errorBox.classList.add('show');
+}
+
+function clearError() {
+  errorBox.textContent = '';
+  errorBox.classList.remove('show');
+}
+
+function selectFile(file) {
+  clearError();
+  selectedFile = null;
+  uploadBtn.disabled = true;
+  fileStatus.className = 'file-status';
+  if (selectedPreviewUrl) URL.revokeObjectURL(selectedPreviewUrl);
+  selectedPreviewUrl = '';
+
+  if (!file) {
+    fileStatus.textContent = 'No image selected yet.';
+    return;
+  }
+
+  const extension = file.name.split('.').pop().toLowerCase();
+  if (!allowedExtensions.has(extension)) {
+    fileStatus.textContent = `Selected: ${file.name}`;
+    showError('Use JPG, PNG, or WebP. If your phone saved HEIC, export or convert it to JPG first.');
+    return;
+  }
+  if (file.size > maxUploadBytes) {
+    fileStatus.textContent = `Selected: ${file.name} (${formatBytes(file.size)})`;
+    showError('Image is too large. Use a file under 32 MB.');
+    return;
+  }
+
+  selectedFile = file;
+  selectedPreviewUrl = URL.createObjectURL(file);
+  uploadBtn.disabled = false;
+  fileStatus.textContent = `Selected: ${file.name} (${formatBytes(file.size)}). Ready to upload.`;
+  fileStatus.className = 'file-status ready';
+}
+
+async function readResponse(response) {
+  const contentType = response.headers.get('content-type') || '';
+  const data = contentType.includes('application/json') ? await response.json() : {error: await response.text()};
+  if (!response.ok) {
+    showError(data.error || 'Prediction failed');
+    return null;
+  }
+  return data;
+}
+
+function renderResult(data, previewUrl = '') {
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('result').classList.add('show');
+  document.getElementById('previewImage').src = previewUrl || data.image_url;
+  document.getElementById('modelName').textContent = data.model;
+  document.getElementById('prediction').textContent = data.prediction;
+  document.getElementById('confidence').textContent = `${pct(data.confidence)} confidence`;
+  document.getElementById('confidenceBadge').textContent = data.low_confidence ? 'Review top scores' : 'High confidence';
+  document.getElementById('tip').textContent = data.tip;
+
+  const actionBadge = document.getElementById('actionBadge');
+  actionBadge.textContent = data.action;
+  actionBadge.className = `badge ${data.action === 'Recycle' ? 'recycle' : 'trash'}`;
+
+  const lowConfidence = document.getElementById('lowConfidence');
+  lowConfidence.textContent = data.low_confidence ? data.fallback : '';
+  lowConfidence.classList.toggle('show', data.low_confidence);
+
+  const topList = document.getElementById('topList');
+  topList.innerHTML = '';
+  data.top_predictions.forEach((item, index) => {
+    topList.insertAdjacentHTML('beforeend', `
+      <div class="top-item">
+        <div class="rank">Rank ${index + 1}</div>
+        <div class="name">${item.class}</div>
+        <div class="score">${pct(item.confidence)}</div>
+      </div>
+    `);
   });
-  const d = await res.json();
-
-  document.getElementById('resImg').src = '/static/samples/' + file;
-  document.getElementById('predClass').textContent = d.prediction;
-  document.getElementById('predConf').textContent = (d.confidence * 100).toFixed(1) + '% confidence';
-
-  const badge = document.getElementById('badge');
-  badge.textContent = d.action;
-  badge.className = 'badge ' + (d.action === 'Recycle' ? 'recycle' : 'trash');
-  document.getElementById('tip').textContent = d.tip;
 
   const bars = document.getElementById('bars');
   bars.innerHTML = '';
-  const sorted = Object.entries(d.probabilities).sort((a, b) => b[1] - a[1]);
-  for (const [cls, prob] of sorted) {
-    const pct = (prob * 100).toFixed(1);
-    const isTop = cls === d.prediction;
-    bars.innerHTML += `<div class="bar-row">
-      <div class="bar-label">${cls}</div>
-      <div class="bar-track">
-        <div class="bar-fill ${isTop ? 'top' : 'other'}" style="width:${Math.max(prob*100, 3)}%">${pct}%</div>
-      </div>
-    </div>`;
-  }
-  document.getElementById('result').classList.add('show');
+  Object.entries(data.probabilities)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([label, score]) => {
+      const width = Math.max(score * 100, 0.8);
+      const isTop = label === data.prediction;
+      bars.insertAdjacentHTML('beforeend', `
+        <div class="bar-row">
+          <div class="bar-label">${label}</div>
+          <div class="bar-track"><div class="bar-fill ${isTop ? 'top' : ''}" style="width: ${width}%"></div></div>
+          <div class="bar-score">${pct(score)}</div>
+        </div>
+      `);
+    });
 }
+
+async function classifySample(button) {
+  clearError();
+  document.querySelectorAll('.sample').forEach(item => item.classList.remove('active'));
+  button.classList.add('active');
+  setLoading(true);
+  const response = await fetch('/predict', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({filename: button.dataset.file})
+  });
+  const data = await readResponse(response);
+  if (data) renderResult(data);
+  setLoading(false);
+}
+
+async function classifyUpload(event) {
+  event.preventDefault();
+  clearError();
+  if (!selectedFile) {
+    showError('Choose an image file first');
+    return;
+  }
+  document.querySelectorAll('.sample').forEach(item => item.classList.remove('active'));
+  const formData = new FormData();
+  formData.append('image', selectedFile);
+  const uploadedName = selectedFile.name;
+  setLoading(true);
+  const response = await fetch('/predict', {method: 'POST', body: formData});
+  const data = await readResponse(response);
+  setLoading(false);
+  if (data) {
+    renderResult(data, selectedPreviewUrl);
+    fileStatus.textContent = `Uploaded and classified: ${uploadedName}`;
+    fileStatus.className = 'file-status ready';
+  }
+}
+
+chooseBtn.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+  selectFile(fileInput.files[0]);
+});
+uploadForm.addEventListener('submit', classifyUpload);
+samples.addEventListener('click', event => {
+  const button = event.target.closest('.sample');
+  if (button) classifySample(button);
+});
+
+['dragenter', 'dragover'].forEach(type => {
+  uploadForm.addEventListener(type, event => {
+    event.preventDefault();
+    uploadForm.classList.add('dragging');
+  });
+});
+
+['dragleave', 'drop'].forEach(type => {
+  uploadForm.addEventListener(type, event => {
+    event.preventDefault();
+    uploadForm.classList.remove('dragging');
+  });
+});
+
+uploadForm.addEventListener('drop', event => {
+  if (event.dataTransfer.files.length) {
+    selectFile(event.dataTransfer.files[0]);
+  }
+});
 </script>
 </body>
 </html>

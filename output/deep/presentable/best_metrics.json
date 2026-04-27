@@ -1,0 +1,86 @@
+{
+  "model": "vit_base_patch16_224",
+  "timm_model": "vit_base_patch16_224",
+  "experiment": {
+    "name": "full_finetune",
+    "augment": "light",
+    "class_weights": true,
+    "sampler": false,
+    "freeze_epochs": 1,
+    "head_only": false,
+    "pretrained": true,
+    "image_size": 224,
+    "epochs": 5,
+    "lr": 0.0001,
+    "weight_decay": 0.05
+  },
+  "best_epoch": 5,
+  "params": 85803270,
+  "trainable_params": 85803270,
+  "val": {
+    "loss": 0.3263074218204594,
+    "accuracy": 0.9182058047493403,
+    "macro_f1": 0.9049215244431599,
+    "weighted_f1": 0.9184117461959098
+  },
+  "test": {
+    "loss": 0.20858606519667724,
+    "accuracy": 0.9263157894736842,
+    "macro_f1": 0.9219482909938915,
+    "weighted_f1": 0.9273386146542413,
+    "report": {
+      "cardboard": {
+        "precision": 0.9821428571428571,
+        "recall": 0.9166666666666666,
+        "f1-score": 0.9482758620689655,
+        "support": 60.0
+      },
+      "glass": {
+        "precision": 0.971830985915493,
+        "recall": 0.9078947368421053,
+        "f1-score": 0.9387755102040817,
+        "support": 76.0
+      },
+      "metal": {
+        "precision": 0.9516129032258065,
+        "recall": 0.9516129032258065,
+        "f1-score": 0.9516129032258065,
+        "support": 62.0
+      },
+      "paper": {
+        "precision": 0.9540229885057471,
+        "recall": 0.9325842696629213,
+        "f1-score": 0.9431818181818182,
+        "support": 89.0
+      },
+      "plastic": {
+        "precision": 0.8192771084337349,
+        "recall": 0.9315068493150684,
+        "f1-score": 0.8717948717948718,
+        "support": 73.0
+      },
+      "trash": {
+        "precision": 0.8571428571428571,
+        "recall": 0.9,
+        "f1-score": 0.8780487804878049,
+        "support": 20.0
+      },
+      "accuracy": 0.9263157894736842,
+      "macro avg": {
+        "precision": 0.9226716167277492,
+        "recall": 0.9233775709520947,
+        "f1-score": 0.9219482909938915,
+        "support": 380.0
+      },
+      "weighted avg": {
+        "precision": 0.9306469957728425,
+        "recall": 0.9263157894736842,
+        "f1-score": 0.9273386146542413,
+        "support": 380.0
+      }
+    }
+  },
+  "median_latency_ms": 5.227719957474619,
+  "seconds": 78.020172397024,
+  "checkpoint": "output/deep/pretrained_core_lr1e4_5ep/runs/vit_base_patch16_224/full_finetune/checkpoint_best.pt"
+}

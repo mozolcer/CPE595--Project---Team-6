@@ -1,3 +1,14 @@
 __pycache__/
 *.pyc
 .venv/
+.codex
+static/uploads/*
+!static/uploads/.gitignore
+output/deep/best_model.pt
+output/deep/split_seed42*.json
+output/deep/**/best_model.pt
+output/deep/**/checkpoint_best.pt
+output/deep/runs/
+output/deep/pretrained_core_3ep/
+output/deep/pretrained_core_lr1e4_5ep/
+output/deep/custom_cnn_*/

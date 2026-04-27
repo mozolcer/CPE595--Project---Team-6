@@ -1,0 +1,25 @@
+SortSmart Deep Vision Results
+==================================================
+
+Dataset: TrashNet (6 classes)
+Split: 1768 train / 379 val / 380 test
+Train class counts: {'cardboard': 282, 'glass': 350, 'metal': 287, 'paper': 416, 'plastic': 337, 'trash': 96}
+Models: efficientnetv2_s, convnext_tiny, swin_tiny_patch4_window7_224, vit_base_patch16_224
+Ablation plan: core
+
+Best run: vit_base_patch16_224 / full_finetune
+Validation Macro-F1: 0.9049
+Test Macro-F1: 0.9219
+Test Accuracy: 0.9263
+Median latency: 5.23 ms
+Checkpoint: output/deep/pretrained_core_lr1e4_5ep/runs/vit_base_patch16_224/full_finetune/checkpoint_best.pt
+
+Leaderboard:
+  vit_base_patch16_224           full_finetune        val_f1=0.9049 test_f1=0.9219 acc=0.9263
+  swin_tiny_patch4_window7_224   full_finetune        val_f1=0.9030 test_f1=0.9475 acc=0.9474
+  convnext_tiny                  full_finetune        val_f1=0.8929 test_f1=0.9191 acc=0.9316
+  efficientnetv2_s               full_finetune        val_f1=0.7857 test_f1=0.7824 acc=0.7895
+  convnext_tiny                  head_only            val_f1=0.6336 test_f1=0.6247 acc=0.6711
+  swin_tiny_patch4_window7_224   head_only            val_f1=0.5903 test_f1=0.6252 acc=0.6553
+  vit_base_patch16_224           head_only            val_f1=0.5830 test_f1=0.6423 acc=0.6711
+  efficientnetv2_s               head_only            val_f1=0.1435 test_f1=0.1638 acc=0.1711

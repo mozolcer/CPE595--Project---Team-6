@@ -1,45 +1,84 @@
-"""SortSmart Demo Web App — single-page Flask app."""
+"""SortSmart Flask app backed by the selected deep vision checkpoint."""
 
-import numpy as np
-import cv2
-import joblib
+import os
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify
-from skimage.feature import hog
+
+from flask import Flask, jsonify, render_template, request, url_for
+from PIL import Image
+from werkzeug.exceptions import RequestEntityTooLarge
+
+from deep_vision import CLASSES, DeepImageClassifier
+
 
 app = Flask(__name__)
+MAX_UPLOAD_MB = int(os.environ.get("SORTSMART_MAX_UPLOAD_MB", "32"))
+app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
-MODEL = joblib.load("output/best_model.joblib")
-SCALER = joblib.load("output/scaler.joblib")
-
-CLASSES = ["cardboard", "glass", "metal", "paper", "plastic", "trash"]
-IMG_SIZE = (128, 128)
 SAMPLES_DIR = Path("static/samples")
 
+CHECKPOINT = os.environ.get("SORTSMART_DEEP_CHECKPOINT", "output/deep/best_model.pt")
+DEVICE = os.environ.get("SORTSMART_DEEP_DEVICE", "auto")
+CONFIDENCE_THRESHOLD = float(os.environ.get("SORTSMART_CONFIDENCE_THRESHOLD", "0.70"))
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+
+CLASSIFIER = DeepImageClassifier(CHECKPOINT, device=DEVICE)
+
 DISPOSAL = {
-    "cardboard": ("Recycle", "Blue bin — flatten boxes first"),
-    "glass":     ("Recycle", "Blue bin — rinse, remove lids"),
-    "metal":     ("Recycle", "Blue bin — rinse cans"),
-    "paper":     ("Recycle", "Blue bin — keep dry"),
-    "plastic":   ("Recycle", "Blue bin — check local #s accepted"),
-    "trash":     ("Trash",   "Black bin — general waste"),
+    "cardboard": ("Recycle", "Blue bin: flatten clean cardboard first."),
+    "glass": ("Recycle", "Blue bin: rinse containers and remove loose lids."),
+    "metal": ("Recycle", "Blue bin: rinse cans and foil when accepted locally."),
+    "paper": ("Recycle", "Blue bin: keep paper dry and free of food residue."),
+    "plastic": ("Recycle", "Blue bin: rinse and check local plastic number rules."),
+    "trash": ("Trash", "Black bin: general waste or contaminated material."),
 }
 
 
-def extract_features(img_bgr):
-    resized = cv2.resize(img_bgr, IMG_SIZE)
-    gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    hog_feat = hog(gray, orientations=9, pixels_per_cell=(8, 8),
-                   cells_per_block=(2, 2), block_norm="L2-Hys",
-                   feature_vector=True)
-    hsv = cv2.cvtColor(resized, cv2.COLOR_BGR2HSV)
-    hist = np.concatenate([
-        cv2.calcHist([hsv], [ch], None, [32],
-                     [0, 180] if ch == 0 else [0, 256]).flatten()
-        for ch in range(3)
-    ])
-    hist = hist / (hist.sum() + 1e-7)
-    return np.concatenate([hog_feat, hist])
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def upload_too_large(_error):
+    return jsonify(error=f"Image is too large. Use a file under {MAX_UPLOAD_MB} MB."), 413
+
+
+def build_response(result, image_url=None, uploaded_filename=None):
+    prediction = result["prediction"]
+    confidence = result["confidence"]
+    probabilities = {
+        cls: round(float(result["probabilities"][cls]), 4)
+        for cls in CLASSES
+    }
+    top_predictions = [
+        {"class": cls, "confidence": probabilities[cls]}
+        for cls in sorted(CLASSES, key=lambda cls: probabilities[cls], reverse=True)[:3]
+    ]
+    action, tip = DISPOSAL[prediction]
+
+    return {
+        "prediction": prediction,
+        "confidence": round(float(confidence), 4),
+        "action": action,
+        "tip": tip,
+        "probabilities": probabilities,
+        "top_predictions": top_predictions,
+        "low_confidence": confidence < CONFIDENCE_THRESHOLD,
+        "fallback": "Low confidence: retake with the item centered on a plain background, then compare the top predictions.",
+        "image_url": image_url,
+        "uploaded_filename": uploaded_filename,
+        "model": CLASSIFIER.checkpoint["model_key"],
+        "threshold": CONFIDENCE_THRESHOLD,
+    }
+
+
+def classify_path(image_path, image_url):
+    return build_response(CLASSIFIER.predict_path(image_path), image_url=image_url)
+
+
+def classify_upload(upload):
+    image = Image.open(upload.stream).convert("RGB")
+    uploaded_filename = Path(upload.filename).name
+    return build_response(CLASSIFIER.predict_image(image), uploaded_filename=uploaded_filename)
 
 
 @app.route("/")
@@ -50,32 +89,22 @@ def index():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    filename = request.json.get("filename")
-    if not filename:
-        return jsonify(error="No image selected"), 400
+    if request.is_json:
+        payload = request.get_json(silent=True) or {}
+        filename = Path(str(payload.get("filename", ""))).name
+        image_path = SAMPLES_DIR / filename
+        if not filename or not image_path.exists():
+            return jsonify(error="Sample image not found"), 400
+        image_url = url_for("static", filename=f"samples/{filename}")
+        return jsonify(classify_path(image_path, image_url))
 
-    path = SAMPLES_DIR / filename
-    img = cv2.imread(str(path))
-    if img is None:
-        return jsonify(error="Could not load image"), 400
+    upload = request.files.get("image")
+    if not upload or not upload.filename:
+        return jsonify(error="Upload an image file first"), 400
+    if not allowed_file(upload.filename):
+        return jsonify(error="Supported formats: JPG, JPEG, PNG, WEBP"), 400
 
-    feat = extract_features(img).reshape(1, -1)
-    feat = SCALER.transform(feat)
-
-    proba = MODEL.predict_proba(feat)[0]
-    pred_idx = int(np.argmax(proba))
-    pred_class = CLASSES[pred_idx]
-    confidence = float(proba[pred_idx])
-
-    action, tip = DISPOSAL[pred_class]
-
-    return jsonify(
-        prediction=pred_class,
-        confidence=round(confidence, 3),
-        action=action,
-        tip=tip,
-        probabilities={c: round(float(proba[i]), 3) for i, c in enumerate(CLASSES)},
-    )
+    return jsonify(classify_upload(upload))
 
 
 if __name__ == "__main__":
