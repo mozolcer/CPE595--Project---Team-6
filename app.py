@@ -16,12 +16,12 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
 SAMPLES_DIR = Path("static/samples")
 
-CHECKPOINT = os.environ.get("SORTSMART_DEEP_CHECKPOINT", "output/deep/best_model.pt")
+CHECKPOINT = Path(os.environ.get("SORTSMART_DEEP_CHECKPOINT", "output/deep/best_model.pt"))
 DEVICE = os.environ.get("SORTSMART_DEEP_DEVICE", "auto")
 CONFIDENCE_THRESHOLD = float(os.environ.get("SORTSMART_CONFIDENCE_THRESHOLD", "0.70"))
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 
-CLASSIFIER = DeepImageClassifier(CHECKPOINT, device=DEVICE)
+CLASSIFIER = None
 
 DISPOSAL = {
     "cardboard": ("Recycle", "Blue bin: flatten clean cardboard first."),
@@ -37,12 +37,20 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def get_classifier():
+    global CLASSIFIER
+    if CLASSIFIER is None and CHECKPOINT.exists():
+        CLASSIFIER = DeepImageClassifier(CHECKPOINT, device=DEVICE)
+    return CLASSIFIER
+
+
 @app.errorhandler(RequestEntityTooLarge)
 def upload_too_large(_error):
     return jsonify(error=f"Image is too large. Use a file under {MAX_UPLOAD_MB} MB."), 413
 
 
 def build_response(result, image_url=None, uploaded_filename=None):
+    classifier = get_classifier()
     prediction = result["prediction"]
     confidence = result["confidence"]
     probabilities = {
@@ -66,19 +74,21 @@ def build_response(result, image_url=None, uploaded_filename=None):
         "fallback": "Low confidence: retake with the item centered on a plain background, then compare the top predictions.",
         "image_url": image_url,
         "uploaded_filename": uploaded_filename,
-        "model": CLASSIFIER.checkpoint["model_key"],
+        "model": classifier.checkpoint["model_key"],
         "threshold": CONFIDENCE_THRESHOLD,
     }
 
 
 def classify_path(image_path, image_url):
-    return build_response(CLASSIFIER.predict_path(image_path), image_url=image_url)
+    classifier = get_classifier()
+    return build_response(classifier.predict_path(image_path), image_url=image_url)
 
 
 def classify_upload(upload):
+    classifier = get_classifier()
     image = Image.open(upload.stream).convert("RGB")
     uploaded_filename = Path(upload.filename).name
-    return build_response(CLASSIFIER.predict_image(image), uploaded_filename=uploaded_filename)
+    return build_response(classifier.predict_image(image), uploaded_filename=uploaded_filename)
 
 
 @app.route("/")
@@ -89,6 +99,9 @@ def index():
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    if get_classifier() is None:
+        return jsonify(error=f"Model checkpoint is not installed at {CHECKPOINT}"), 503
+
     if request.is_json:
         payload = request.get_json(silent=True) or {}
         filename = Path(str(payload.get("filename", ""))).name
