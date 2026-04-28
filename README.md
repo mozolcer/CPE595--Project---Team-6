@@ -46,7 +46,7 @@ With CUDA:
 
 ```bash
 export OPENAI_API_KEY=your_openai_api_key
-export SORTSMART_OPENAI_MODEL=gpt-5-mini
+export SORTSMART_OPENAI_MODEL=gpt-5.4-mini
 SORTSMART_DEEP_CHECKPOINT=output/deep/best_model.pt \
 SORTSMART_DEEP_DEVICE=cuda \
 python app.py
@@ -56,7 +56,7 @@ With CPU:
 
 ```bash
 export OPENAI_API_KEY=your_openai_api_key
-export SORTSMART_OPENAI_MODEL=gpt-5-mini
+export SORTSMART_OPENAI_MODEL=gpt-5.4-mini
 SORTSMART_DEEP_CHECKPOINT=output/deep/best_model.pt \
 SORTSMART_DEEP_DEVICE=cpu \
 python app.py
@@ -75,7 +75,7 @@ For Render, set:
 ```text
 SORTSMART_DEEP_CHECKPOINT=/var/data/best_model.pt
 SORTSMART_DEEP_DEVICE=cpu
-SORTSMART_OPENAI_MODEL=gpt-5-mini
+SORTSMART_OPENAI_MODEL=gpt-5.4-mini
 OPENAI_API_KEY=<your key>
 WEB_CONCURRENCY=1
 ```

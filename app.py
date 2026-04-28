@@ -21,7 +21,7 @@ SAMPLES_DIR = Path("static/samples")
 CHECKPOINT = Path(os.environ.get("SORTSMART_DEEP_CHECKPOINT", "output/deep/best_model.pt"))
 DEVICE = os.environ.get("SORTSMART_DEEP_DEVICE", "auto")
 CONFIDENCE_THRESHOLD = float(os.environ.get("SORTSMART_CONFIDENCE_THRESHOLD", "0.70"))
-OPENAI_MODEL = os.environ.get("SORTSMART_OPENAI_MODEL", "gpt-5-mini")
+OPENAI_MODEL = os.environ.get("SORTSMART_OPENAI_MODEL", "gpt-5.4-mini")
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 
 CLASSIFIER = None
