@@ -2,6 +2,7 @@ Flask
 joblib
 matplotlib
 numpy
+openai
 opencv-python-headless
 Pillow
 scikit-image

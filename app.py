@@ -1,9 +1,11 @@
 """SortSmart Flask app backed by the selected deep vision checkpoint."""
 
+import json
 import os
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request, url_for
+from openai import OpenAI
 from PIL import Image
 from werkzeug.exceptions import RequestEntityTooLarge
 
@@ -19,6 +21,7 @@ SAMPLES_DIR = Path("static/samples")
 CHECKPOINT = Path(os.environ.get("SORTSMART_DEEP_CHECKPOINT", "output/deep/best_model.pt"))
 DEVICE = os.environ.get("SORTSMART_DEEP_DEVICE", "auto")
 CONFIDENCE_THRESHOLD = float(os.environ.get("SORTSMART_CONFIDENCE_THRESHOLD", "0.70"))
+OPENAI_MODEL = os.environ.get("SORTSMART_OPENAI_MODEL", "gpt-5-mini")
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 
 CLASSIFIER = None
@@ -31,6 +34,14 @@ DISPOSAL = {
     "plastic": ("Recycle", "Blue bin: rinse and check local plastic number rules."),
     "trash": ("Trash", "Black bin: general waste or contaminated material."),
 }
+
+CHAT_INSTRUCTIONS = """
+You are SortSmart Assistant, a concise recycling guidance chatbot embedded in a class project web app.
+The computer vision model is the source of truth for the predicted class and confidence scores.
+Use the prediction context to answer the user's question, explain uncertainty when confidence is low,
+and give practical disposal guidance. Keep answers under 120 words. Do not claim local rules with
+certainty; tell users to check local guidance when rules can vary. Do not identify people or brands.
+"""
 
 
 def allowed_file(filename):
@@ -79,6 +90,18 @@ def build_response(result, image_url=None, uploaded_filename=None):
     }
 
 
+def build_chat_prompt(question, context, history):
+    trimmed_history = history[-6:] if isinstance(history, list) else []
+    return (
+        "Prediction context:\n"
+        f"{json.dumps(context, indent=2, sort_keys=True)}\n\n"
+        "Recent chat messages:\n"
+        f"{json.dumps(trimmed_history, indent=2, sort_keys=True)}\n\n"
+        "User question:\n"
+        f"{question}"
+    )
+
+
 def classify_path(image_path, image_url):
     classifier = get_classifier()
     return build_response(classifier.predict_path(image_path), image_url=image_url)
@@ -118,6 +141,31 @@ def predict():
         return jsonify(error="Supported formats: JPG, JPEG, PNG, WEBP"), 400
 
     return jsonify(classify_upload(upload))
+
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    if not os.environ.get("OPENAI_API_KEY"):
+        return jsonify(error="Set OPENAI_API_KEY to enable the recycling assistant."), 503
+
+    payload = request.get_json(silent=True) or {}
+    question = str(payload.get("message", "")).strip()
+    context = payload.get("context") or {}
+    history = payload.get("history") or []
+
+    if not question:
+        return jsonify(error="Ask a question first."), 400
+    if not context.get("prediction"):
+        return jsonify(error="Classify an image before using the assistant."), 400
+
+    client = OpenAI()
+    response = client.responses.create(
+        model=OPENAI_MODEL,
+        instructions=CHAT_INSTRUCTIONS.strip(),
+        input=build_chat_prompt(question[:1200], context, history),
+        max_output_tokens=220,
+    )
+    return jsonify(reply=response.output_text, model=OPENAI_MODEL)
 
 
 if __name__ == "__main__":

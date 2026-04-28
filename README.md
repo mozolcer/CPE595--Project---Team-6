@@ -20,8 +20,8 @@ output/deep/best_model.pt
 
 ## Key Files
 
-- `app.py`: Flask app using the final deep checkpoint.
-- `templates/index.html`: Upload-capable web UI with confidence scores.
+- `app.py`: Flask app using the final deep checkpoint and OpenAI assistant endpoint.
+- `templates/index.html`: Upload-capable web UI with confidence scores and chatbot.
 - `train_deep_models.py`: Deep model training and ablation runner.
 - `deep_vision.py`: Model loading and inference utilities.
 - `deep_inference.py`: Command-line inference helper.
@@ -45,6 +45,8 @@ For CPU-only machines, install the CPU PyTorch wheel from the official PyTorch s
 With CUDA:
 
 ```bash
+export OPENAI_API_KEY=your_openai_api_key
+export SORTSMART_OPENAI_MODEL=gpt-5-mini
 SORTSMART_DEEP_CHECKPOINT=output/deep/best_model.pt \
 SORTSMART_DEEP_DEVICE=cuda \
 python app.py
@@ -53,6 +55,8 @@ python app.py
 With CPU:
 
 ```bash
+export OPENAI_API_KEY=your_openai_api_key
+export SORTSMART_OPENAI_MODEL=gpt-5-mini
 SORTSMART_DEEP_CHECKPOINT=output/deep/best_model.pt \
 SORTSMART_DEEP_DEVICE=cpu \
 python app.py
@@ -64,7 +68,17 @@ Open:
 http://127.0.0.1:5000
 ```
 
-The app supports sample images and user uploads. Uploaded images are classified in memory and are not saved to disk.
+The app supports sample images and user uploads. Uploaded images are classified in memory and are not saved to disk. The recycling assistant uses the latest prediction context and requires `OPENAI_API_KEY`; without it, the classifier still works and the assistant returns a setup message.
+
+For Render, set:
+
+```text
+SORTSMART_DEEP_CHECKPOINT=/var/data/best_model.pt
+SORTSMART_DEEP_DEVICE=cpu
+SORTSMART_OPENAI_MODEL=gpt-5-mini
+OPENAI_API_KEY=<your key>
+WEB_CONCURRENCY=1
+```
 
 ## Training
 

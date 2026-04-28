@@ -444,6 +444,73 @@
     font-weight: 850;
   }
 
+  .chat-panel {
+    margin-top: 24px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+  }
+
+  .chat-context {
+    margin: -5px 0 12px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .chat-log {
+    display: grid;
+    gap: 10px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.42);
+  }
+
+  .chat-message {
+    max-width: 88%;
+    padding: 11px 13px;
+    border-radius: 16px;
+    line-height: 1.42;
+    font-size: 0.92rem;
+    white-space: pre-wrap;
+  }
+
+  .chat-message.assistant {
+    justify-self: start;
+    background: rgba(31, 122, 79, 0.11);
+    color: #263622;
+  }
+
+  .chat-message.user {
+    justify-self: end;
+    background: var(--ink);
+    color: var(--cream);
+  }
+
+  .chat-form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .chat-input {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--ink);
+    font: inherit;
+  }
+
+  .chat-input:disabled {
+    opacity: 0.62;
+    cursor: not-allowed;
+  }
+
   .error {
     display: none;
     margin-top: 14px;
@@ -474,6 +541,7 @@
     .main-result { padding: 16px; }
     .samples,
     .top-list { grid-template-columns: 1fr 1fr; }
+    .chat-form { grid-template-columns: 1fr; }
     .prediction-head { display: grid; }
     .bar-row { grid-template-columns: 70px 1fr 48px; }
   }
@@ -561,6 +629,19 @@
 
           <h2 class="section-title">All confidence scores</h2>
           <div class="bars" id="bars"></div>
+
+          <section class="chat-panel" aria-label="Recycling assistant">
+            <h2 class="section-title">Recycling assistant</h2>
+            <p class="chat-context" id="chatContext">Classify an image first, then ask the assistant about disposal guidance, confidence, or uncertainty.</p>
+            <div class="chat-log" id="chatLog">
+              <div class="chat-message assistant">I can explain the model result after you classify an image.</div>
+            </div>
+            <form class="chat-form" id="chatForm">
+              <input class="chat-input" id="chatInput" type="text" maxlength="500" placeholder="Ask about this item..." disabled>
+              <button class="button" type="submit" id="chatSend" disabled>Ask</button>
+            </form>
+            <div class="error" id="chatError"></div>
+          </section>
         </div>
       </div>
     </section>
@@ -575,10 +656,18 @@ const uploadForm = document.getElementById('uploadForm');
 const errorBox = document.getElementById('error');
 const samples = document.getElementById('samples');
 const fileStatus = document.getElementById('fileStatus');
+const chatForm = document.getElementById('chatForm');
+const chatInput = document.getElementById('chatInput');
+const chatSend = document.getElementById('chatSend');
+const chatLog = document.getElementById('chatLog');
+const chatError = document.getElementById('chatError');
+const chatContext = document.getElementById('chatContext');
 const maxUploadBytes = 32 * 1024 * 1024;
 const allowedExtensions = new Set(['jpg', 'jpeg', 'png', 'webp']);
 let selectedFile = null;
 let selectedPreviewUrl = '';
+let currentPrediction = null;
+let chatHistory = [];
 
 function pct(value) {
   return `${(value * 100).toFixed(1)}%`;
@@ -609,6 +698,16 @@ function showError(message) {
 function clearError() {
   errorBox.textContent = '';
   errorBox.classList.remove('show');
+}
+
+function showChatError(message) {
+  chatError.textContent = message;
+  chatError.classList.add('show');
+}
+
+function clearChatError() {
+  chatError.textContent = '';
+  chatError.classList.remove('show');
 }
 
 function selectFile(file) {
@@ -651,6 +750,50 @@ async function readResponse(response) {
     return null;
   }
   return data;
+}
+
+async function readChatResponse(response) {
+  const contentType = response.headers.get('content-type') || '';
+  const data = contentType.includes('application/json') ? await response.json() : {error: await response.text()};
+  if (!response.ok) {
+    showChatError(data.error || 'Assistant failed');
+    return null;
+  }
+  return data;
+}
+
+function appendChatMessage(role, text) {
+  const message = document.createElement('div');
+  message.className = `chat-message ${role}`;
+  message.textContent = text;
+  chatLog.appendChild(message);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function setChatLoading(isLoading) {
+  chatInput.disabled = isLoading || !currentPrediction;
+  chatSend.disabled = isLoading || !currentPrediction;
+  chatSend.textContent = isLoading ? 'Thinking...' : 'Ask';
+}
+
+function resetChat(data) {
+  currentPrediction = {
+    prediction: data.prediction,
+    confidence: data.confidence,
+    action: data.action,
+    tip: data.tip,
+    low_confidence: data.low_confidence,
+    top_predictions: data.top_predictions,
+    probabilities: data.probabilities,
+    model: data.model,
+    threshold: data.threshold
+  };
+  chatHistory = [];
+  clearChatError();
+  chatContext.textContent = `Assistant context: ${data.prediction} at ${pct(data.confidence)} confidence using ${data.model}.`;
+  chatLog.innerHTML = '';
+  appendChatMessage('assistant', `I can explain why this looks like ${data.prediction}, what the confidence means, and how to dispose of it responsibly.`);
+  setChatLoading(false);
 }
 
 function renderResult(data, previewUrl = '') {
@@ -698,6 +841,43 @@ function renderResult(data, previewUrl = '') {
         </div>
       `);
     });
+
+  resetChat(data);
+}
+
+async function askAssistant(event) {
+  event.preventDefault();
+  clearChatError();
+  const message = chatInput.value.trim();
+  if (!message) {
+    showChatError('Type a question first.');
+    return;
+  }
+  if (!currentPrediction) {
+    showChatError('Classify an image before using the assistant.');
+    return;
+  }
+
+  appendChatMessage('user', message);
+  chatHistory.push({role: 'user', content: message});
+  chatInput.value = '';
+  setChatLoading(true);
+
+  const response = await fetch('/chat', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      message,
+      context: currentPrediction,
+      history: chatHistory.slice(-6)
+    })
+  });
+  const data = await readChatResponse(response);
+  setChatLoading(false);
+  if (data) {
+    appendChatMessage('assistant', data.reply);
+    chatHistory.push({role: 'assistant', content: data.reply});
+  }
 }
 
 async function classifySample(button) {
@@ -742,6 +922,7 @@ fileInput.addEventListener('change', () => {
   selectFile(fileInput.files[0]);
 });
 uploadForm.addEventListener('submit', classifyUpload);
+chatForm.addEventListener('submit', askAssistant);
 samples.addEventListener('click', event => {
   const button = event.target.closest('.sample');
   if (button) classifySample(button);
