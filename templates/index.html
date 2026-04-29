@@ -25,6 +25,7 @@
     min-height: 100vh;
     font-family: "Aptos", "IBM Plex Sans", "Segoe UI", sans-serif;
     color: var(--ink);
+    overflow-x: hidden;
     background:
       radial-gradient(circle at 12% 12%, rgba(99, 145, 87, 0.45), transparent 28rem),
       radial-gradient(circle at 86% 8%, rgba(235, 187, 88, 0.26), transparent 24rem),
@@ -32,7 +33,7 @@
   }
 
   .shell {
-    width: min(1180px, calc(100% - 32px));
+    width: min(1500px, calc(100% - 32px));
     margin: 0 auto;
     padding: 34px 0 44px;
   }
@@ -72,7 +73,7 @@
   }
 
   .subtitle {
-    max-width: 450px;
+    max-width: 560px;
     margin: 7px 0 0;
     color: rgba(247, 242, 229, 0.7);
     font-size: 0.96rem;
@@ -90,7 +91,7 @@
 
   .grid {
     display: grid;
-    grid-template-columns: 0.95fr 1.35fr;
+    grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.82fr);
     gap: 22px;
     align-items: start;
   }
@@ -161,7 +162,7 @@
   }
 
   .button:hover { transform: translateY(-1px); }
-  .button:disabled { cursor: wait; opacity: 0.64; transform: none; }
+  .button:disabled { cursor: not-allowed; opacity: 0.64; transform: none; }
 
   .button-row {
     display: flex;
@@ -265,7 +266,7 @@
   .result { display: none; }
   .result.show {
     display: grid;
-    grid-template-columns: 0.82fr 1fr;
+    grid-template-columns: minmax(230px, 0.82fr) minmax(290px, 1fr) minmax(300px, 0.92fr);
     gap: 0;
     animation: rise 220ms ease-out;
   }
@@ -276,19 +277,18 @@
   }
 
   .preview {
-    min-height: 642px;
     background: var(--panel-dark);
     padding: 18px;
     display: flex;
     flex-direction: column;
     gap: 14px;
+    min-width: 0;
   }
 
   .preview img {
     width: 100%;
-    flex: 1;
-    min-height: 420px;
-    object-fit: cover;
+    height: clamp(340px, 54vh, 600px);
+    object-fit: contain;
     border-radius: 22px;
     background: #111;
   }
@@ -308,7 +308,10 @@
     text-transform: uppercase;
   }
 
-  .main-result { padding: 26px; }
+  .main-result {
+    min-width: 0;
+    padding: 26px;
+  }
 
   .prediction-head {
     display: flex;
@@ -444,28 +447,90 @@
     font-weight: 850;
   }
 
-  .chat-panel {
-    margin-top: 24px;
-    padding-top: 22px;
-    border-top: 1px solid var(--line);
+  .assistant-panel {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 22px;
+    background:
+      radial-gradient(circle at 15% 8%, rgba(228, 200, 111, 0.32), transparent 13rem),
+      linear-gradient(180deg, #24311f 0%, #151b13 100%);
+    color: var(--cream);
+    border-left: 1px solid rgba(23, 32, 20, 0.18);
+  }
+
+  .assistant-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .assistant-title {
+    margin: 0;
+    font-size: 1.45rem;
+    line-height: 1;
+    letter-spacing: -0.05em;
+  }
+
+  .assistant-model {
+    border: 1px solid rgba(247, 242, 229, 0.18);
+    border-radius: 999px;
+    padding: 7px 10px;
+    color: rgba(247, 242, 229, 0.78);
+    font-size: 0.74rem;
+    font-weight: 800;
+    white-space: nowrap;
   }
 
   .chat-context {
-    margin: -5px 0 12px;
-    color: var(--muted);
+    margin: 0;
+    color: rgba(247, 242, 229, 0.68);
     font-size: 0.9rem;
     line-height: 1.4;
   }
 
+  .prompt-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .prompt-chip {
+    border: 1px solid rgba(247, 242, 229, 0.2);
+    border-radius: 999px;
+    padding: 8px 10px;
+    background: rgba(247, 242, 229, 0.08);
+    color: var(--cream);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 750;
+  }
+
+  .prompt-chip:disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
+  }
+
+  .assistant-panel .button {
+    background: #e4c86f;
+    color: #152012;
+  }
+
   .chat-log {
+    flex: 1;
     display: grid;
+    align-content: start;
     gap: 10px;
-    max-height: 260px;
+    min-height: 250px;
+    max-height: 460px;
     overflow-y: auto;
     padding: 12px;
-    border: 1px solid var(--line);
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.42);
+    border: 1px solid rgba(247, 242, 229, 0.16);
+    border-radius: 22px;
+    background: rgba(247, 242, 229, 0.08);
   }
 
   .chat-message {
@@ -479,14 +544,14 @@
 
   .chat-message.assistant {
     justify-self: start;
-    background: rgba(31, 122, 79, 0.11);
-    color: #263622;
+    background: rgba(247, 242, 229, 0.9);
+    color: #1b2618;
   }
 
   .chat-message.user {
     justify-self: end;
-    background: var(--ink);
-    color: var(--cream);
+    background: #e4c86f;
+    color: #152012;
   }
 
   .chat-form {
@@ -498,11 +563,11 @@
 
   .chat-input {
     width: 100%;
-    border: 1px solid var(--line);
+    border: 1px solid rgba(247, 242, 229, 0.2);
     border-radius: 999px;
     padding: 12px 14px;
-    background: rgba(255, 255, 255, 0.72);
-    color: var(--ink);
+    background: rgba(247, 242, 229, 0.95);
+    color: #172014;
     font: inherit;
   }
 
@@ -523,6 +588,26 @@
 
   .error.show { display: block; }
 
+  #chatError {
+    margin-top: 0;
+    background: rgba(255, 224, 218, 0.95);
+  }
+
+  @media (max-width: 1250px) {
+    .shell { width: min(1180px, calc(100% - 28px)); }
+    .grid { grid-template-columns: minmax(300px, 0.75fr) minmax(0, 1.35fr); }
+    .result.show { grid-template-columns: minmax(230px, 0.85fr) minmax(290px, 1fr); }
+    .assistant-panel {
+      grid-column: 1 / -1;
+      border-left: 0;
+      border-top: 1px solid rgba(247, 242, 229, 0.12);
+    }
+    .chat-log {
+      min-height: 170px;
+      max-height: 300px;
+    }
+  }
+
   @media (max-width: 920px) {
     header,
     .grid,
@@ -532,7 +617,8 @@
     .preview,
     .result-card,
     .empty-state { min-height: auto; }
-    .preview img { min-height: 280px; max-height: 420px; }
+    .assistant-panel { grid-column: auto; }
+    .preview img { height: min(420px, 62vh); }
   }
 
   @media (max-width: 560px) {
@@ -542,6 +628,9 @@
     .samples,
     .top-list { grid-template-columns: 1fr 1fr; }
     .chat-form { grid-template-columns: 1fr; }
+    .assistant-top { display: grid; }
+    .assistant-panel { padding: 18px; }
+    .assistant-model { width: fit-content; }
     .prediction-head { display: grid; }
     .bar-row { grid-template-columns: 70px 1fr 48px; }
   }
@@ -629,20 +718,30 @@
 
           <h2 class="section-title">All confidence scores</h2>
           <div class="bars" id="bars"></div>
-
-          <section class="chat-panel" aria-label="Recycling assistant">
-            <h2 class="section-title">Recycling assistant</h2>
-            <p class="chat-context" id="chatContext">Classify an image first, then ask the assistant about disposal guidance, confidence, or uncertainty.</p>
-            <div class="chat-log" id="chatLog">
-              <div class="chat-message assistant">I can explain the model result after you classify an image.</div>
-            </div>
-            <form class="chat-form" id="chatForm">
-              <input class="chat-input" id="chatInput" type="text" maxlength="500" placeholder="Ask about this item..." disabled>
-              <button class="button" type="submit" id="chatSend" disabled>Ask</button>
-            </form>
-            <div class="error" id="chatError"></div>
-          </section>
         </div>
+
+        <section class="assistant-panel" aria-label="Recycling assistant">
+          <div class="assistant-top">
+            <div>
+              <h2 class="assistant-title">Recycling assistant</h2>
+              <p class="chat-context" id="chatContext">Classify an image first, then ask about disposal guidance, confidence, or uncertainty.</p>
+            </div>
+            <div class="assistant-model">gpt-5.4-mini</div>
+          </div>
+          <div class="prompt-chips" aria-label="Suggested assistant questions">
+            <button class="prompt-chip" type="button" data-prompt="Why did the model choose this class?" disabled>Why this class?</button>
+            <button class="prompt-chip" type="button" data-prompt="What should I do if the item is dirty?" disabled>If dirty?</button>
+            <button class="prompt-chip" type="button" data-prompt="What does this confidence score mean?" disabled>Confidence?</button>
+          </div>
+          <div class="chat-log" id="chatLog">
+            <div class="chat-message assistant">I can explain the model result after you classify an image.</div>
+          </div>
+          <form class="chat-form" id="chatForm">
+            <input class="chat-input" id="chatInput" type="text" maxlength="500" placeholder="Ask about this item..." disabled>
+            <button class="button" type="submit" id="chatSend" disabled>Ask</button>
+          </form>
+          <div class="error" id="chatError"></div>
+        </section>
       </div>
     </section>
   </div>
@@ -662,6 +761,7 @@ const chatSend = document.getElementById('chatSend');
 const chatLog = document.getElementById('chatLog');
 const chatError = document.getElementById('chatError');
 const chatContext = document.getElementById('chatContext');
+const promptChips = document.querySelectorAll('.prompt-chip');
 const maxUploadBytes = 32 * 1024 * 1024;
 const allowedExtensions = new Set(['jpg', 'jpeg', 'png', 'webp']);
 let selectedFile = null;
@@ -677,16 +777,27 @@ function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function setLoading(isLoading) {
+function setFileStatus(message, state = '') {
+  fileStatus.textContent = message;
+  fileStatus.className = state ? `file-status ${state}` : 'file-status';
+}
+
+function setIdleUploadStatus() {
+  if (selectedFile) {
+    setFileStatus(`Selected: ${selectedFile.name} (${formatBytes(selectedFile.size)}). Ready to upload.`, 'ready');
+  } else {
+    setFileStatus('No image selected yet.');
+  }
+}
+
+function setLoading(isLoading, message = 'Running the model...') {
   uploadBtn.disabled = isLoading || !selectedFile;
   chooseBtn.disabled = isLoading;
   document.querySelectorAll('.sample').forEach(button => button.disabled = isLoading);
   if (isLoading) {
-    fileStatus.textContent = 'Uploading image and running the model...';
-    fileStatus.className = 'file-status busy';
-  } else if (selectedFile) {
-    fileStatus.textContent = `Selected: ${selectedFile.name} (${formatBytes(selectedFile.size)}). Ready to upload.`;
-    fileStatus.className = 'file-status ready';
+    setFileStatus(message, 'busy');
+  } else {
+    setIdleUploadStatus();
   }
 }
 
@@ -714,23 +825,22 @@ function selectFile(file) {
   clearError();
   selectedFile = null;
   uploadBtn.disabled = true;
-  fileStatus.className = 'file-status';
   if (selectedPreviewUrl) URL.revokeObjectURL(selectedPreviewUrl);
   selectedPreviewUrl = '';
 
   if (!file) {
-    fileStatus.textContent = 'No image selected yet.';
+    setFileStatus('No image selected yet.');
     return;
   }
 
   const extension = file.name.split('.').pop().toLowerCase();
   if (!allowedExtensions.has(extension)) {
-    fileStatus.textContent = `Selected: ${file.name}`;
+    setFileStatus(`Selected: ${file.name}`);
     showError('Use JPG, PNG, or WebP. If your phone saved HEIC, export or convert it to JPG first.');
     return;
   }
   if (file.size > maxUploadBytes) {
-    fileStatus.textContent = `Selected: ${file.name} (${formatBytes(file.size)})`;
+    setFileStatus(`Selected: ${file.name} (${formatBytes(file.size)})`);
     showError('Image is too large. Use a file under 32 MB.');
     return;
   }
@@ -738,8 +848,7 @@ function selectFile(file) {
   selectedFile = file;
   selectedPreviewUrl = URL.createObjectURL(file);
   uploadBtn.disabled = false;
-  fileStatus.textContent = `Selected: ${file.name} (${formatBytes(file.size)}). Ready to upload.`;
-  fileStatus.className = 'file-status ready';
+  setIdleUploadStatus();
 }
 
 async function readResponse(response) {
@@ -774,6 +883,7 @@ function setChatLoading(isLoading) {
   chatInput.disabled = isLoading || !currentPrediction;
   chatSend.disabled = isLoading || !currentPrediction;
   chatSend.textContent = isLoading ? 'Thinking...' : 'Ask';
+  promptChips.forEach(button => button.disabled = isLoading || !currentPrediction);
 }
 
 function resetChat(data) {
@@ -871,8 +981,14 @@ async function askAssistant(event) {
       context: currentPrediction,
       history: chatHistory.slice(-6)
     })
+  }).catch(() => {
+    showChatError('Assistant request failed. Check the API key and network connection.');
+    return null;
   });
-  const data = await readChatResponse(response);
+  const data = response ? await readChatResponse(response).catch(() => {
+    showChatError('Assistant returned an unreadable response.');
+    return null;
+  }) : null;
   setChatLoading(false);
   if (data) {
     appendChatMessage('assistant', data.reply);
@@ -884,15 +1000,24 @@ async function classifySample(button) {
   clearError();
   document.querySelectorAll('.sample').forEach(item => item.classList.remove('active'));
   button.classList.add('active');
-  setLoading(true);
+  setLoading(true, 'Running selected sample through the model...');
   const response = await fetch('/predict', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({filename: button.dataset.file})
+  }).catch(() => {
+    showError('Prediction request failed. Check the server and try again.');
+    return null;
   });
-  const data = await readResponse(response);
-  if (data) renderResult(data);
+  const data = response ? await readResponse(response).catch(() => {
+    showError('Prediction returned an unreadable response.');
+    return null;
+  }) : null;
   setLoading(false);
+  if (data) {
+    renderResult(data);
+    setFileStatus(`Sample classified: ${button.dataset.file.replace('.jpg', '')}. Upload your own image anytime.`, 'ready');
+  }
 }
 
 async function classifyUpload(event) {
@@ -906,14 +1031,19 @@ async function classifyUpload(event) {
   const formData = new FormData();
   formData.append('image', selectedFile);
   const uploadedName = selectedFile.name;
-  setLoading(true);
-  const response = await fetch('/predict', {method: 'POST', body: formData});
-  const data = await readResponse(response);
+  setLoading(true, 'Uploading image and running the model...');
+  const response = await fetch('/predict', {method: 'POST', body: formData}).catch(() => {
+    showError('Upload failed. Check the server and try again.');
+    return null;
+  });
+  const data = response ? await readResponse(response).catch(() => {
+    showError('Prediction returned an unreadable response.');
+    return null;
+  }) : null;
   setLoading(false);
   if (data) {
     renderResult(data, selectedPreviewUrl);
-    fileStatus.textContent = `Uploaded and classified: ${uploadedName}`;
-    fileStatus.className = 'file-status ready';
+    setFileStatus(`Uploaded and classified: ${uploadedName}`, 'ready');
   }
 }
 
@@ -923,6 +1053,12 @@ fileInput.addEventListener('change', () => {
 });
 uploadForm.addEventListener('submit', classifyUpload);
 chatForm.addEventListener('submit', askAssistant);
+promptChips.forEach(button => {
+  button.addEventListener('click', () => {
+    chatInput.value = button.dataset.prompt;
+    chatForm.requestSubmit();
+  });
+});
 samples.addEventListener('click', event => {
   const button = event.target.closest('.sample');
   if (button) classifySample(button);
